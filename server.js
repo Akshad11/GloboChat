@@ -7,16 +7,16 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
-
 import routes from "./routes/index.js";
 import { connectDB, disconnectDB } from "./config/db.js";
+import { initSocketServer } from "./websocket/socketServer.js";
+
 
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
     // Connect DB first
     await connectDB();
-
     const app = express();
 
     // Middlewares
@@ -69,6 +69,8 @@ async function startServer() {
     const server = app.listen(PORT, () => {
         console.log(`🚀 Server listening on http://localhost:${PORT}`);
     });
+
+    initSocketServer(server);
 
     // Graceful shutdown
     const shutdown = async (signal) => {
