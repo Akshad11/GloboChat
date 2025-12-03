@@ -47,6 +47,7 @@ tmp/
 temp/
 .cache/
 coverage/
+data/
 
 # ==========================
 # OS / Editor Files

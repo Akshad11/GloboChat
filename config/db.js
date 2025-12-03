@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export async function connectDB() {
+
     const MAX_RETRIES = 5;
     let retries = 0;
     const MONGO_URI = process.env.MONGO_URI;

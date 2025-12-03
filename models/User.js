@@ -5,13 +5,11 @@ const userSchema = new mongoose.Schema(
         username: {
             type: String,
             required: true,
-            unique: true,
             trim: true,
         },
         email: {
             type: String,
             required: true,
-            unique: true,
             lowercase: true,
             trim: true,
         },
@@ -26,22 +24,17 @@ const userSchema = new mongoose.Schema(
         bio: {
             type: String,
             default: "",
-            maxlength: 200,
         },
         status: {
             type: String,
             enum: ["online", "offline"],
             default: "offline",
         },
-        lastSeen: {
-            type: Date,
-            default: null,
-        }
+        lastSeen: Date,
     },
     { timestamps: true }
 );
 
-// Indexes
 userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ username: 1 }, { unique: true });
 
