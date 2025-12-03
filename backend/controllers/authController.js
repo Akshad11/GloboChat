@@ -1,4 +1,58 @@
 import * as authService from "../services/authService.js";
+import { OAuth2Client } from "google-auth-library";
+import User from "../models/User.js";
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleLogin = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({ message: "Missing Google ID Token" });
+        }
+
+        // Verify Google token
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
+
+        // Check if user exists
+        let user = await User.findOne({ email });
+
+        if (!user) {
+            // Create new user
+            user = await User.create({
+                username: name.toLowerCase().replace(/\s+/g, ""),
+                email,
+                passwordHash: "", // empty since using Google
+                avatarUrl: picture,
+            });
+        }
+
+        // Issue access + refresh tokens
+        const tokens = await authService.createTokensForUser(user);
+
+        return res.json({
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                avatarUrl: user.avatarUrl,
+            },
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+        });
+
+    } catch (err) {
+        console.error("Google login error:", err);
+        return res.status(500).json({ message: "Google login failed" });
+    }
+};
 
 export const register = async (req, res) => {
     try {
