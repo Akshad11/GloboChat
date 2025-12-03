@@ -19,25 +19,27 @@ export const googleLogin = async (req, res) => {
         });
 
         const payload = ticket.getPayload();
-        const { email, name, picture } = payload;
+        const { email, name, picture, sub } = payload;
 
-        // Check if user exists
+        // --------- Check if user exists ---------
         let user = await User.findOne({ email });
 
         if (!user) {
-            // Create new user
+            // Create a new Google user
             user = await User.create({
                 username: name.toLowerCase().replace(/\s+/g, ""),
                 email,
-                passwordHash: "", // empty since using Google
+                googleId: sub, // save google account id
+                passwordHash: "GOOGLE_USER_NO_PASSWORD", // not used
                 avatarUrl: picture,
             });
         }
 
-        // Issue access + refresh tokens
+        // --------- Login existing user or newly created ---------
         const tokens = await authService.createTokensForUser(user);
 
         return res.json({
+            message: user ? "Logged in successfully" : "Account created",
             user: {
                 id: user._id,
                 username: user.username,
@@ -53,6 +55,7 @@ export const googleLogin = async (req, res) => {
         return res.status(500).json({ message: "Google login failed" });
     }
 };
+
 
 export const register = async (req, res) => {
     try {
