@@ -22,10 +22,23 @@ async function startServer() {
     // Middlewares
     app.use(helmet());
     app.use(compression());
-    app.use(cors({
-        origin: process.env.CORS_ALLOWED_ORIGINS?.split(",") || "*",
-        credentials: true
-    }));
+    const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+        ? process.env.CORS_ALLOWED_ORIGINS.split(",")
+        : [];
+
+    app.use(
+        cors({
+            origin: function (origin, callback) {
+                // allow if origin is in the allowed list OR the request is from server itself
+                if (!origin || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error(`CORS blocked: ${origin} not allowed`));
+                }
+            },
+            credentials: true,
+        })
+    );
     app.use(express.json({ limit: "5mb" }));
     app.use(express.urlencoded({ extended: true }));
     app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
