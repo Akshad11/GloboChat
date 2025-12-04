@@ -1,11 +1,14 @@
+// proxy.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(req: NextRequest) {
-    const { pathname } = req.nextUrl;
+export function proxy(req: NextRequest) {
+    const pathname = req.nextUrl.pathname;
 
-    // Protect these routes (client side will also enforce)
-    if (pathname.startsWith("/chat") || pathname.startsWith("/profile")) {
+    if (
+        pathname.startsWith("/chat") ||
+        pathname === "/profile"
+    ) {
         const refreshToken = req.cookies.get("refreshToken")?.value;
         if (!refreshToken) {
             const url = req.nextUrl.clone();
