@@ -6,7 +6,7 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const googleLogin = async (req, res) => {
     try {
-        const { idToken } = req.body;
+        const { idToken, username, firstname, lastname } = req.body;
 
         if (!idToken) {
             return res.status(400).json({ message: "Missing Google ID Token" });
@@ -27,11 +27,13 @@ export const googleLogin = async (req, res) => {
         if (!user) {
             // Create a new Google user
             user = await User.create({
-                username: name.toLowerCase().replace(/\s+/g, ""),
-                email,
+                username: username.toLowerCase().replace(/\s+/g, ""),
+                email: email.toLowerCase(),
                 googleId: sub, // save google account id
                 passwordHash: "GOOGLE_USER_NO_PASSWORD", // not used
                 avatarUrl: picture,
+                name: firstname,
+                lastName: lastname,
             });
         }
 
@@ -59,21 +61,40 @@ export const googleLogin = async (req, res) => {
 
 export const register = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, firstName, lastName } = req.body;
 
-        // Basic guards (you can enhance later)
-        if (!username || !email || !password) {
+        console.log("Register request received:", { username, email, firstName, lastName });
+
+        if (!username || !email || !password || !firstName || !lastName) {
             return res.status(400).json({ message: "Missing required fields" });
         }
 
-        // Prevent duplicate email/username
-        const existingByEmail = await authService.findUserByEmail(email);
-        if (existingByEmail) {
-            return res.status(409).json({ message: "Email already in use" });
+        // Check duplicates
+        const existingUser = await User.findOne({
+            $or: [{ username }, { email }],
+        });
+
+        if (existingUser) {
+            if (existingUser.username === username) {
+                return res.status(400).json({ message: "Username already exists" });
+            }
+            if (existingUser.email === email) {
+                return res.status(400).json({ message: "Email already exists" });
+            }
         }
 
-        // register
-        const user = await authService.registerUser({ username, email, password });
+        console.log("No existing user found. Proceeding...");
+
+        const user = await authService.registerUser({
+            username,
+            email,
+            password,
+            name: firstName,
+            lastName,
+        });
+
+        console.log("Registered user:", user._id);
+
         const tokens = await authService.createTokensForUser(user);
 
         return res.status(201).json({
@@ -82,12 +103,22 @@ export const register = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 avatarUrl: user.avatarUrl || null,
+                name: user.name,
+                lastName: user.lastName,
+                inviteCode: user.inviteCode,
             },
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
         });
+
     } catch (err) {
         console.error("Register error:", err);
+
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyPattern)[0];
+            return res.status(400).json({ message: `${field} already exists` });
+        }
+
         return res.status(500).json({ message: "Registration failed" });
     }
 };

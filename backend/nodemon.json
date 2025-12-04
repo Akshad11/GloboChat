@@ -1,0 +1,16 @@
+{
+    "watch": [
+        "controllers",
+        "routes",
+        "services",
+        "models",
+        "utils",
+        "server.js"
+    ],
+    "ext": "js,json",
+    "ignore": [
+        "node_modules",
+        ".vscode"
+    ],
+    "exec": "node --inspect=9229 server.js"
+}

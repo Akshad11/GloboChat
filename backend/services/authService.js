@@ -13,9 +13,17 @@ export const verifyPassword = async (plain, hash) => {
     return await bcrypt.compare(plain, hash);
 };
 
-export const registerUser = async ({ username, email, password }) => {
-    const passwordHash = await hashPassword(password);
-    const user = await User.create({ username, email, passwordHash });
+export const registerUser = async ({ username, email, password, name, lastName }) => {
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+        username,
+        email,
+        passwordHash,
+        name,
+        lastName,
+    });
+
     return user;
 };
 
