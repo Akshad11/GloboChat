@@ -1,12 +1,16 @@
 "use client";
 
 import { XMarkIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { use, useState } from "react";
 import ChatListItem from "./ChatListItem";
+import InvitePopup from "./InvitePopup";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ChatSidebar({ onClose }: { onClose: () => void }) {
+    const [showInvite, setShowInvite] = useState(false);
+    const { user } = useAuth();
 
-    // Fake sample data
+
     const conversations = [
         {
             id: 1,
@@ -96,10 +100,16 @@ export default function ChatSidebar({ onClose }: { onClose: () => void }) {
                     text-black hover:scale-110 transition-transform
                     active:scale-95 z-50
                 "
-                onClick={() => console.log("Open create chat modal")}
+                onClick={() => setShowInvite(true)}
             >
                 <PlusIcon className="w-6 h-6" />
             </button>
+            {showInvite && (
+                <InvitePopup
+                    onClose={() => setShowInvite(false)}
+                    yourInviteCode={user?.inviteCode || ""}
+                />
+            )}
         </div>
     );
 }
