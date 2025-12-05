@@ -62,7 +62,7 @@ export default function StepAccount({ next, update, form }: any) {
                     value={form.email}
                     onChange={(e) => update({ email: e.target.value })}
                     placeholder="Email"
-                    className="w-full p-3 border rounded"
+                    className="w-full p-3 border rounded placeholder:text-gray-500"
                 />
 
                 <input
@@ -70,7 +70,7 @@ export default function StepAccount({ next, update, form }: any) {
                     value={form.password}
                     onChange={(e) => update({ password: e.target.value })}
                     placeholder="Password"
-                    className="w-full p-3 border rounded"
+                    className="w-full p-3 border rounded placeholder:text-gray-500"
                 />
 
                 <button
@@ -81,7 +81,7 @@ export default function StepAccount({ next, update, form }: any) {
                 </button>
             </form>
 
-            <div className="text-center text-gray-500 py-3">or</div>
+            <div className="text-center text-white py-3">or</div>
 
             <div id="google-register-btn" className="w-full"></div>
         </div>

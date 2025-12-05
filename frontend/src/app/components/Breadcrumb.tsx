@@ -21,12 +21,12 @@ export default function Breadcrumb() {
     };
 
     return (
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6 select-none">
+        <div className="flex items-center gap-2 text-sm text-gray-200 mb-6 select-none">
 
             {/* Home */}
             <button
                 onClick={() => router.push("/")}
-                className="flex items-center gap-1 hover:text-gray-800"
+                className="flex items-center gap-1 hover:text-gray-500"
             >
                 <HomeIcon className="w-4 h-4" />
                 Home
@@ -38,10 +38,10 @@ export default function Breadcrumb() {
 
                 return (
                     <span key={href} className="flex items-center gap-2">
-                        <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+                        <ChevronRightIcon className="w-4 h-4 text-gray-300" />
 
                         {isLast ? (
-                            <span className="font-medium text-gray-800">
+                            <span className="font-medium text-gray-300">
                                 {format(part)}
                             </span>
                         ) : (

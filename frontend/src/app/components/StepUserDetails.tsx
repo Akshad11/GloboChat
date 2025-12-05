@@ -17,28 +17,28 @@ export default function StepUserDetails({ next, prev, update, form }: any) {
                     value={form.username}
                     onChange={(e) => update({ username: e.target.value })}
                     placeholder="Username"
-                    className="w-full p-3 border rounded"
+                    className="w-full p-3 border rounded placeholder:text-gray-500"
                 />
 
                 <input
                     value={form.firstname}
                     onChange={(e) => update({ firstname: e.target.value })}
                     placeholder="First Name"
-                    className="w-full p-3 border rounded"
+                    className="w-full p-3 border rounded placeholder:text-gray-500"
                 />
 
                 <input
                     value={form.lastname}
                     onChange={(e) => update({ lastname: e.target.value })}
                     placeholder="Last Name"
-                    className="w-full p-3 border rounded"
+                    className="w-full p-3 border rounded placeholder:text-gray-500"
                 />
 
                 <div className="flex gap-3">
                     <button
                         type="button"
                         onClick={prev}
-                        className="w-1/2 p-3 bg-gray-200 rounded"
+                        className="w-1/2 p-3 bg-gray-500 rounded"
                     >
                         Back
                     </button>
