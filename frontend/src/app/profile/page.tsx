@@ -65,15 +65,15 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="h-screen bg-gray-100 flex items-center justify-center px-4">
+        <div className="h-screen bg-gray-800 text-white flex items-center justify-center px-4">
 
-            <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-8">
+            <div className="w-full max-w-lg bg-gray-900 rounded-xl shadow-lg p-8">
 
                 {/* Breadcrumb */}
                 <Breadcrumb />
 
                 {/* Header */}
-                <h1 className="text-2xl font-semibold mb-6 text-gray-800">
+                <h1 className="text-2xl font-semibold mb-6 text-gray-300">
                     Edit Profile
                 </h1>
 
@@ -94,23 +94,23 @@ export default function ProfilePage() {
                         placeholder="Avatar URL"
                         value={avatar}
                         onChange={(e) => setAvatar(e.target.value)}
-                        className="mt-4 w-full p-2 border rounded-lg text-sm"
+                        className="mt-4 w-full p-2 border rounded-lg text-sm placeholder:text-gray-500"
                     />
                 </div>
 
                 {/* Username */}
                 <div className="mb-4">
-                    <label className="text-sm text-gray-600 mb-1 block">Username</label>
+                    <label className="text-sm text-gray-300 mb-1 block">Username</label>
                     <input
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full p-3 border rounded-lg"
+                        className="w-full p-3 border rounded-lg "
                     />
                 </div>
 
                 {/* Bio */}
                 <div className="mb-6">
-                    <label className="text-sm text-gray-600 mb-1 block">Bio</label>
+                    <label className="text-sm text-gray-300 mb-1 block">Bio</label>
                     <textarea
                         value={bio}
                         onChange={(e) => setBio(e.target.value)}

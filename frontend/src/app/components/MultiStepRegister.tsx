@@ -22,7 +22,7 @@ export default function MultiStepRegister() {
     }
 
     return (
-        <div className="w-full max-w-lg mx-auto bg-white rounded-xl shadow-xl p-8 relative">
+        <div className="w-full max-w-lg mx-auto text-white bg-gray-900 rounded-xl shadow-xl p-8 relative">
 
             {/* STEP INDICATOR */}
             <div className="flex justify-between mb-6">
@@ -30,7 +30,7 @@ export default function MultiStepRegister() {
                     <div
                         key={n}
                         className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold
-                            ${step === n ? "bg-blue-600 text-white" : step > n ? "bg-green-600 text-white" : "bg-gray-300"}
+                            ${step === n ? "bg-blue-600 text-white" : step > n ? "bg-green-600 text-white" : "bg-gray-400"}
                         `}
                     >
                         {n}

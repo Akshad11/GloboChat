@@ -19,7 +19,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             {/* Conversation Sidebar */}
             <div
                 className={`bg-white border-r h-full transition-all duration-300 
-                fixed sm:static top-0 left-0 w-72 sm:w-72 z-50 
+                fixed sm:static top-0 left-0 w-72 sm:w-90 z-50 
                 ${showChats ? "translate-x-0" : "-translate-x-full sm:translate-x-0"}
             `}
             >
