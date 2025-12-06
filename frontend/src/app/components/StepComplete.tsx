@@ -2,11 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import api, { setAccessToken } from "@/lib/axios";
-import { setCookie } from "cookies-next";
+import { useAuth } from "@/context/AuthContext";
 
-export default function StepComplete({ form }: any) {
+type StepCompleteProps = {
+    form: {
+        username: string;
+        email?: string;
+        password?: string;
+        firstname: string;
+        lastname: string;
+        googleIdToken?: string;
+    };
+};
+
+export default function StepComplete({ form }: StepCompleteProps) {
     const router = useRouter();
+    const { register, googleSignIn } = useAuth();
+
     const [loading, setLoading] = useState(true);
     const calledRef = useRef(false);
 
@@ -15,55 +27,49 @@ export default function StepComplete({ form }: any) {
         calledRef.current = true;
 
         async function finishRegistration() {
-            setLoading(true);
-
             try {
-                let res;
+                setLoading(true);
 
-                // 🌐 GOOGLE REGISTER
                 if (form.googleIdToken) {
-                    res = await api.post("/auth/google", {
-                        idToken: form.googleIdToken,
+                    await googleSignIn(form.googleIdToken, {
                         username: form.username,
                         firstName: form.firstname,
                         lastName: form.lastname,
                     });
                 }
-                // ✉️ NORMAL EMAIL/PASSWORD REGISTER
                 else {
-                    res = await api.post("/auth/register", {
+                    await register({
                         username: form.username,
-                        email: form.email,
-                        password: form.password,
+                        email: form.email!,
+                        password: form.password!,
                         firstName: form.firstname,
                         lastName: form.lastname,
-                    });
+                    } as any); // adjust type if needed
                 }
-                const data = res.data;
 
-                // Save tokens
-                setAccessToken(data.accessToken);
-                setCookie("refreshToken", data.refreshToken);
-
-                router.push("/chat");
-
+                router.replace("/chat");
             } catch (err) {
                 console.error("Registration error:", err);
                 alert("Error creating account");
+            } finally {
+                setLoading(false);
             }
-
-            setLoading(false);
         }
 
         finishRegistration();
-    }, []);
+    }, [form, register, googleSignIn, router]);
 
     return (
-        <div className="text-center">
+        <div className="flex flex-col items-center justify-center gap-4">
             {loading ? (
-                <p className="text-gray-600">Creating your account...</p>
+                <>
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+                    <p className="text-gray-600">
+                        Creating your account...
+                    </p>
+                </>
             ) : (
-                <h2 className="text-xl font-semibold">Welcome!</h2>
+                <h2 className="text-xl font-semibold">Welcome aboard 🎉</h2>
             )}
         </div>
     );

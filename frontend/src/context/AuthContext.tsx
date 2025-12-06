@@ -3,15 +3,16 @@ import React, { createContext, useContext, useEffect, useState, useRef } from "r
 import api, { setAccessToken } from "@/lib/axios";
 import { setCookie, getCookie, deleteCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
+import { connectSocket } from "@/lib/socket";
 
 type AuthContextType = {
     user: any | null;
     token: string | null;
     loading: boolean;
-    register: (data: { username: string; email: string; password: string }) => Promise<void>;
+    register: (data: { username: string; email: string; password: string, firstName: string; lastName: string }) => Promise<void>;
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
-    googleSignIn: () => Promise<void>;
+    googleSignIn: (idToken: string, userData?: { username: string; firstName: string; lastName: string }) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     // AUTH METHODS
-    async function register(data: { username: string; email: string; password: string }) {
+    async function register(data: { username: string; email: string; password: string, firstName: string; lastName: string }) {
         const resp = await api.post("/auth/register", data);
         const { accessToken, refreshToken, user } = resp.data;
 
@@ -82,9 +83,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setToken(accessToken);
         setAccessToken(accessToken);
+
         if (refreshToken) setCookie("refreshToken", refreshToken, { path: "/" });
 
         setUser(user);
+
+        connectSocket(accessToken);
     }
 
     async function logout() {
@@ -100,10 +104,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push("/login");
     }
 
-    async function googleSignIn() {
-        alert("Use Google button. Integrated in page.");
-    }
+    async function googleSignIn(idToken: string, userData?: { username: string; firstName: string; lastName: string }) {
+        const resp = await api.post("/auth/google", { idToken, ...userData });
 
+        const { accessToken, refreshToken, user } = resp.data;
+
+        setToken(accessToken);
+        setAccessToken(accessToken);
+
+        if (refreshToken) {
+            setCookie("refreshToken", refreshToken, { path: "/" });
+        }
+
+        setUser(user);
+
+        connectSocket(accessToken);
+    }
     return (
         <AuthContext.Provider value={{ user, token, loading, register, login, logout, googleSignIn }}>
             {children}

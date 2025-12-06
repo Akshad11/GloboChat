@@ -1,73 +1,63 @@
 import { Server } from "socket.io";
-import { verifyAccessToken } from "../utils/jwt.js";
-import Conversation from "../models/Conversation.js";
-import Message from "../models/Message.js";
+
+const onlineUsers = new Map();
+
+let io;
 
 export function initSocketServer(server) {
-    const io = new Server(server, {
+    io = new Server(server, {
         cors: {
             origin: "*",
-            methods: ["GET", "POST"]
-        }
-    });
-
-    // Middleware: Authenticate socket using JWT
-    io.use((socket, next) => {
-        try {
-            const token = socket.handshake.auth?.token;
-            if (!token) return next(new Error("No token provided"));
-
-            const payload = verifyAccessToken(token);
-            socket.userId = payload.sub;
-
-            next();
-        } catch (err) {
-            next(new Error("Invalid or expired token"));
-        }
+            credentials: true,
+        },
     });
 
     io.on("connection", (socket) => {
-        console.log("🔌 User connected:", socket.userId);
+        console.log("🔌 Socket connected:", socket.id);
 
-        // Join conversation rooms
-        socket.on("join_conversation", (conversationId) => {
-            console.log(`User ${socket.userId} joined conversation ${conversationId}`);
-            socket.join(conversationId);
-        });
+        socket.on("register", (userId) => {
+            userId = userId.toString();
 
-        // Typing indicator
-        socket.on("typing", (conversationId) => {
-            socket.to(conversationId).emit("typing", {
-                userId: socket.userId,
-                conversationId
-            });
-        });
+            if (!onlineUsers.has(userId)) {
+                onlineUsers.set(userId, new Set());
+            }
 
-        // Send message
-        socket.on("send_message", async (data) => {
-            const { conversationId, content } = data;
+            onlineUsers.get(userId).add(socket.id);
 
-            const message = await Message.create({
-                conversationId,
-                senderId: socket.userId,
-                content,
-                type: "text",
-            });
-
-            // Broadcast to everyone in the room
-            io.to(conversationId).emit("new_message", {
-                _id: message._id,
-                conversationId,
-                senderId: socket.userId,
-                content,
-                createdAt: message.createdAt
-            });
+            console.log(
+                `✅ User ${userId} registered with socket ${socket.id}`
+            );
         });
 
         socket.on("disconnect", () => {
-            console.log("🔌 User disconnected:", socket.userId);
+            console.log("❌ Socket disconnected:", socket.id);
+
+            for (const [userId, sockets] of onlineUsers.entries()) {
+                sockets.delete(socket.id);
+
+                if (sockets.size === 0) {
+                    onlineUsers.delete(userId);
+                }
+            }
         });
     });
 
-    return io;
+    console.log("✅ Socket.IO initialized");
+}
+
+// 🔥 helper to emit to all active sockets of a user
+export function emitToUser(userId, event, payload) {
+    if (!io) return;
+
+    const sockets = onlineUsers.get(userId?.toString());
+    if (!sockets) return;
+
+    for (const socketId of sockets) {
+        io.to(socketId).emit(event, payload);
+    }
+}
+
+// Optional: broadcast helpers
+export function emitToUsers(userIds = [], event, payload) {
+    userIds.forEach((uid) => emitToUser(uid, event, payload));
 }
