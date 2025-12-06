@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { XMarkIcon, ClipboardIcon, ShareIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import {
+    XMarkIcon,
+    ClipboardIcon,
+    ShareIcon,
+    PaperAirplaneIcon,
+    CheckIcon,
+} from "@heroicons/react/24/outline";
 
 export default function InvitePopup({
     onClose,
@@ -12,107 +18,156 @@ export default function InvitePopup({
     yourInviteCode: string;
 }) {
     const [friendCode, setFriendCode] = useState("");
-    const [showSentBubble, setShowSentBubble] = useState(false);
+    const [sent, setSent] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-    function handleSubmit(e: any) {
+    function sendInvite(e: any) {
         e.preventDefault();
         if (!friendCode.trim()) return;
 
-        // Show animation bubble
-        setShowSentBubble(true);
-
+        setSent(true);
         setTimeout(() => {
-            setShowSentBubble(false);
+            setSent(false);
             setFriendCode("");
-        }, 2500);
+        }, 2600);
     }
 
     function copyCode() {
         navigator.clipboard.writeText(yourInviteCode);
-        alert("Invite code copied!");
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
     }
 
     async function shareCode() {
         try {
             await navigator.share({
-                title: "My Invite Code",
-                text: `Join me using this code: ${yourInviteCode}`,
+                title: "Invite Code",
+                text: `Join me using this invite code: ${yourInviteCode}`,
             });
-        } catch (err) {
-            alert("Sharing not supported on this device");
-        }
+        } catch { }
     }
 
     return (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[999]">
-
-            {/* Popup Card */}
+        <AnimatePresence>
+            {/* BACKDROP */}
             <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                className="bg-gray-900 text-white w-full max-w-md rounded-2xl p-6 relative"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-md z-[999] flex items-center justify-center"
             >
-                {/* Close Button */}
-                <button onClick={onClose} className="absolute top-3 right-3 p-2 hover:bg-gray-800 rounded-lg">
-                    <XMarkIcon className="w-6 h-6" />
-                </button>
-
-                <h2 className="text-xl font-bold mb-4">Invite Friends</h2>
-
-                {/* ENTER A FRIEND'S CODE */}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        value={friendCode}
-                        onChange={(e) => setFriendCode(e.target.value)}
-                        placeholder="Enter friend's invite code"
-                        className="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 outline-none focus:border-blue-500"
-                    />
-
+                {/* POPUP */}
+                <motion.div
+                    initial={{ scale: 0.75, opacity: 0, y: 40 }}
+                    animate={{
+                        scale: 1,
+                        opacity: 1,
+                        y: 0,
+                        transition: { type: "spring", stiffness: 220, damping: 18 },
+                    }}
+                    exit={{ scale: 0.85, opacity: 0 }}
+                    className="relative w-full max-w-md bg-[#0f1115] text-white rounded-2xl p-6 shadow-2xl border border-gray-800"
+                >
+                    {/* CLOSE */}
                     <button
-                        type="submit"
-                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 py-3 rounded-lg transition"
+                        onClick={onClose}
+                        className="absolute top-4 right-4 p-2 hover:bg-gray-800 rounded-lg transition"
                     >
-                        Send Invite
-                        <PaperAirplaneIcon className="w-5 h-5 rotate-45" />
+                        <XMarkIcon className="w-6 h-6" />
                     </button>
-                </form>
 
-                {/* Your Invite Code */}
-                <div className="mt-6 bg-gray-800 p-4 rounded-xl border border-gray-700">
-                    <p className="text-gray-300 text-sm mb-2">Your Invite Code</p>
+                    <h2 className="text-2xl font-bold mb-2">Invite Friends</h2>
+                    <p className="text-sm text-gray-400 mb-5">
+                        Enter a friend’s code or share yours.
+                    </p>
 
-                    <div className="flex items-center justify-between">
-                        <span className="font-mono text-lg">{yourInviteCode}</span>
+                    {/* FRIEND CODE INPUT */}
+                    <form onSubmit={sendInvite} className="space-y-4">
+                        <motion.input
+                            whileFocus={{ boxShadow: "0 0 0 2px #3B82F6" }}
+                            value={friendCode}
+                            onChange={(e) => setFriendCode(e.target.value)}
+                            placeholder="Enter invite code"
+                            className="w-full p-3 rounded-lg bg-[#1a1d21] border border-gray-700 outline-none"
+                        />
 
-                        <div className="flex gap-3">
-                            <button onClick={copyCode} className="p-2 hover:bg-gray-700 rounded-lg">
-                                <ClipboardIcon className="w-5 h-5" />
-                            </button>
-                            <button onClick={shareCode} className="p-2 hover:bg-gray-700 rounded-lg">
-                                <ShareIcon className="w-5 h-5" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* SENT MESSAGE BUBBLE ANIMATION */}
-                <AnimatePresence>
-                    {showSentBubble && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20 }}
-                            transition={{ duration: 0.4 }}
-                            className="absolute bottom-[-10px] left-6 bg-blue-600 px-4 py-2 rounded-2xl shadow-lg"
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="
+                                w-full py-3 rounded-lg flex items-center justify-center gap-2
+                                bg-gradient-to-r from-blue-500 to-indigo-500
+                                shadow-lg shadow-blue-500/20
+                            "
                         >
-                            <p className="text-white text-sm">
-                                Invite sent!
-                            </p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            Send Invite
+                            <PaperAirplaneIcon className="w-5 h-5 rotate-45" />
+                        </motion.button>
+                    </form>
+
+                    {/* YOUR INVITE CODE */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="mt-6 bg-[#1a1d21] rounded-xl border border-gray-700 p-4"
+                    >
+                        <p className="text-xs text-gray-400 mb-2">
+                            Your invite code
+                        </p>
+
+                        <div className="flex items-center justify-between">
+                            <span className="font-mono text-lg tracking-widest">
+                                {yourInviteCode}
+                            </span>
+
+                            <div className="flex items-center gap-2">
+                                {/* COPY */}
+                                <motion.button
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={copyCode}
+                                    className="p-2 rounded-lg hover:bg-gray-700 transition"
+                                >
+                                    {copied ? (
+                                        <CheckIcon className="w-5 h-5 text-green-400" />
+                                    ) : (
+                                        <ClipboardIcon className="w-5 h-5" />
+                                    )}
+                                </motion.button>
+
+                                {/* SHARE */}
+                                <motion.button
+                                    whileTap={{ scale: 0.9 }}
+                                    onClick={shareCode}
+                                    className="p-2 rounded-lg hover:bg-gray-700 transition"
+                                >
+                                    <ShareIcon className="w-5 h-5" />
+                                </motion.button>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* SENT BUBBLE */}
+                    <AnimatePresence>
+                        {sent && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 30, scale: 0.8 }}
+                                animate={{ opacity: 1, y: -10, scale: 1 }}
+                                exit={{ opacity: 0, y: -40, scale: 0.7 }}
+                                className="
+                                    absolute left-6 -bottom-8
+                                    bg-blue-600 px-4 py-2 rounded-full
+                                    shadow-lg shadow-blue-600/40
+                                "
+                            >
+                                <p className="text-sm font-medium">
+                                    Invite sent ✅
+                                </p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
             </motion.div>
-        </div>
+        </AnimatePresence>
     );
 }

@@ -8,9 +8,11 @@ import {
     UserCircleIcon,
     ArrowLeftOnRectangleIcon,
     Cog6ToothIcon,
+    EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import InvitesPopup from "./InvitesPopup";
 
 export default function IconSidebar({
     onToggleChats,
@@ -19,6 +21,8 @@ export default function IconSidebar({
 }) {
     const [active, setActive] = useState("recent");
     const [showMenu, setShowMenu] = useState(false);
+    const [showInvites, setShowInvites] = useState(false);
+    const [showRequests, setShowRequests] = useState(false);
     const router = useRouter();
     const { logout } = useAuth();
 
@@ -95,7 +99,18 @@ export default function IconSidebar({
                 </button>
 
                 {showMenu && (
-                    <div className="absolute bottom-14 bg-gray-800 text-white rounded-lg shadow-lg w-40 py-2 animate-fade-in left-1/2 -translate-x-1/2">
+                    <div className="absolute bottom-14 bg-gray-800 text-white rounded-lg shadow-lg border w-40 py-2 animate-fade-in left-[90px] z-999 -translate-x-1/2">
+
+                        <button
+                            onClick={() => {
+                                setShowInvites(true);
+                                setShowRequests(false);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2"
+                        >
+                            <EnvelopeIcon className="w-5 h-5" />
+                            Requests
+                        </button>
                         <button
                             onClick={() => router.push("/profile")}
                             className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2"
@@ -106,7 +121,7 @@ export default function IconSidebar({
 
                         <button
                             onClick={logout}
-                            className="w-full text-left px-4 py-2 hover:bg-red-600 flex items-center gap-2 text-red-400"
+                            className="w-full text-left px-4 py-2 hover:bg-red-100 flex items-center gap-2  text-red-400"
                         >
                             <ArrowLeftOnRectangleIcon className="w-5 h-5" />
                             Logout
@@ -114,6 +129,13 @@ export default function IconSidebar({
                     </div>
                 )}
             </div>
+            {
+                showInvites && (
+                    <InvitesPopup
+                        onClose={() => setShowInvites(false)}
+                    />
+                )
+            }
         </div>
     );
 }
