@@ -54,7 +54,7 @@ export default function InvitePopup({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-md z-[999] flex items-center justify-center"
+                className="fixed inset-0 bg-black/50 backdrop-blur-md z-999 flex items-center justify-center"
             >
                 {/* POPUP */}
                 <motion.div
@@ -96,7 +96,7 @@ export default function InvitePopup({
                             whileTap={{ scale: 0.95 }}
                             className="
                                 w-full py-3 rounded-lg flex items-center justify-center gap-2
-                                bg-gradient-to-r from-blue-500 to-indigo-500
+                                bg-linear-to-r from-blue-500 to-indigo-500
                                 shadow-lg shadow-blue-500/20
                             "
                         >

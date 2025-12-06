@@ -96,7 +96,7 @@ export default function ChatSidebar({ onClose }: { onClose: () => void }) {
             <button
                 className="
                     absolute bottom-6 right-6 p-4 rounded-full shadow-lg
-                    bg-gradient-to-r from-[#8BEAFF] to-[#FFE29F]
+                    bg-linear-to-r from-[#8BEAFF] to-[#FFE29F]
                     text-black hover:scale-110 transition-transform
                     active:scale-95 z-50
                 "

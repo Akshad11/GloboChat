@@ -15,7 +15,7 @@ export default function InviteNotification({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 100, opacity: 0 }}
             className="
-                fixed top-24 right-4 z-[999]
+                fixed top-24 right-4 z-999
                 bg-gray-900 text-white px-4 py-3 
                 rounded-xl shadow-xl border border-gray-800
                 cursor-pointer
