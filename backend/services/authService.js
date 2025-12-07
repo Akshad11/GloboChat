@@ -94,7 +94,6 @@ export const revokeRefreshToken = async (refreshTokenStr) => {
         tokenRecord.revoked = true;
         await tokenRecord.save();
 
-        console.log("Refresh token revoked:", tokenId);
     } catch (err) {
         console.log("Failed to revoke refresh token:", err.message);
     }

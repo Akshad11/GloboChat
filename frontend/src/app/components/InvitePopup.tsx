@@ -9,6 +9,8 @@ import {
     PaperAirplaneIcon,
     CheckIcon,
 } from "@heroicons/react/24/outline";
+import { useAuth } from "@/hooks/useAuth";
+import { sendPrivateInvite } from "@/lib/socket";
 
 export default function InvitePopup({
     onClose,
@@ -17,6 +19,7 @@ export default function InvitePopup({
     onClose: () => void;
     yourInviteCode: string;
 }) {
+    const { user } = useAuth();
     const [friendCode, setFriendCode] = useState("");
     const [sent, setSent] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -25,6 +28,7 @@ export default function InvitePopup({
         e.preventDefault();
         if (!friendCode.trim()) return;
 
+        sendPrivateInvite(user!.id, friendCode.trim(), "some-invite-id");
         setSent(true);
         setTimeout(() => {
             setSent(false);

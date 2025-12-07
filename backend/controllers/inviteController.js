@@ -5,7 +5,7 @@ import User from "../models/User.js";
 
 /*
 |--------------------------------------------------------------------------
-| SEND INVITE
+| SEND INVITE 
 |--------------------------------------------------------------------------
 | fromUser = req.user._id
 | toUsers = list of user IDs
@@ -17,7 +17,9 @@ import User from "../models/User.js";
 export const sendInvite = async (req, res) => {
     try {
         const fromUser = req.user._id;
-        const { toUsers, invitingTo, targetId, targetModel, message, expiresAt } = req.body;
+        const { touserInviteCode, invitingTo, targetId, targetModel, message, expiresAt } = req.body;
+
+        const toUsers = await User.findOne({ inviteCode: touserInviteCode });
 
         if (!toUsers || !Array.isArray(toUsers) || toUsers.length === 0) {
             return res.status(400).json({ message: "toUsers array required" });
@@ -27,7 +29,7 @@ export const sendInvite = async (req, res) => {
             return res.status(400).json({ message: "Invalid invitingTo type" });
         }
 
-        if (!targetId || !targetModel) {
+        if (!targetModel) {
             return res.status(400).json({ message: "Target conversation or group required" });
         }
 

@@ -5,6 +5,7 @@
         "services",
         "models",
         "utils",
+        "websocket",
         "server.js"
     ],
     "ext": "js,json",
