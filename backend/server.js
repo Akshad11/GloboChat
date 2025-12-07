@@ -20,7 +20,10 @@ async function startServer() {
     const app = express();
 
     // Middlewares
-    app.use(helmet());
+    app.use(
+        helmet()
+    );
+
     app.use(compression());
     const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
         ? process.env.CORS_ALLOWED_ORIGINS.split(",")

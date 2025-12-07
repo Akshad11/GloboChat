@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function ChatSidebar({ onClose }: { onClose: () => void }) {
     const [showInvite, setShowInvite] = useState(false);
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
 
 
     const conversations = [
@@ -104,7 +104,7 @@ export default function ChatSidebar({ onClose }: { onClose: () => void }) {
             >
                 <PlusIcon className="w-6 h-6" />
             </button>
-            {showInvite && (
+            {showInvite && !loading && (
                 <InvitePopup
                     onClose={() => setShowInvite(false)}
                     yourInviteCode={user?.inviteCode || ""}
