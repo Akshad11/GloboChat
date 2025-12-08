@@ -26,9 +26,15 @@ export default function InvitePopup({
 
     function sendInvite(e: any) {
         e.preventDefault();
+
+        if (friendCode === yourInviteCode) {
+            alert("You cannot invite yourself!");
+            setFriendCode("");
+            return;
+        }
         if (!friendCode.trim()) return;
 
-        sendPrivateInvite(user!.id, friendCode.trim(), "some-invite-id");
+        sendPrivateInvite(user!._id, friendCode.trim(), "some-invite-id");
         setSent(true);
         setTimeout(() => {
             setSent(false);

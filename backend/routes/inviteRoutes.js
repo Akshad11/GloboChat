@@ -3,17 +3,21 @@
 import express from "express";
 import {
     sendInvite,
-    acceptInvite,
+    acceptInviteApi,
     rejectInvite,
     revokeInvite,
     getInviteByCode,
-    getMyInvites
+    getMyInvites,
+    getAllPendingInvitesForUser,
+    getAllPendingSentPrivateInvites,
 } from "../controllers/inviteController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 router.post("/send", authMiddleware, sendInvite);
-router.post("/:code/accept", authMiddleware, acceptInvite);
+router.get("/pending", authMiddleware, getAllPendingInvitesForUser);
+router.get("/pendingsent", authMiddleware, getAllPendingSentPrivateInvites);
+router.post("/:code/accept", authMiddleware, acceptInviteApi);
 router.post("/:code/reject", authMiddleware, rejectInvite);
 router.post("/:code/revoke", authMiddleware, revokeInvite);
 router.get("/:code", authMiddleware, getInviteByCode);

@@ -70,7 +70,7 @@ export const sendInvite = async (req, res) => {
 | ACCEPT INVITE
 |--------------------------------------------------------------------------
 */
-export const acceptInvite = async (req, res) => {
+export const acceptInviteApi = async (req, res) => {
     try {
         const { code } = req.params;
         const userId = req.user._id;
@@ -200,5 +200,131 @@ export const getMyInvites = async (req, res) => {
     } catch (err) {
         console.error("Get my invites error:", err);
         return res.status(500).json({ message: "Failed to fetch invites" });
+    }
+};
+//     try {
+//         if (!req.user || !req.user.id) {
+//             console.log(req.user.id);
+//             return res.status(401).json({ message: "Unauthorized" });
+//         }
+
+//         let userId = req.user.id;
+//         const now = new Date();
+
+//         const invites = await Invite.find({
+//             toUsers: userId,
+//             $and: [
+//                 {
+//                     $or: [
+//                         { expiresAt: { $exists: false } },
+//                         { expiresAt: null },
+//                         { expiresAt: { $gt: now } }
+//                     ]
+//                 }
+//             ],
+
+//             // ✅ not accepted by this user
+//             "acceptedBy.user": { $ne: userId },
+
+//             // ✅ not rejected by this user
+//             "rejectedBy.user": { $ne: userId }
+//         });
+
+//         const fromUserIds = invites.map(invite => invite.fromUser);
+
+//         const fromUsers = await User.find({
+//             _id: { $in: fromUserIds }
+//         }).populate("_id name lastName avatarUrl inviteCode");
+
+//         return res.status(200).json({
+//             count: invites.length,
+//             invites,
+//         });
+//     } catch (err) {
+//         console.error("❌ Get all pending invites error:", err);
+//         return res.status(500).json({ message: "Failed to fetch pending invites" });
+//     }
+// };
+
+export const getAllPendingInvitesForUser = async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const userId = req.user.id;
+        const now = new Date();
+
+        const invites = await Invite.find({
+            toUsers: userId,
+
+            // invite valid
+            $or: [
+                { expiresAt: { $exists: false } },
+                { expiresAt: null },
+                { expiresAt: { $gt: now } }
+            ],
+
+            // not accepted or rejected
+            "acceptedBy.user": { $ne: userId },
+            "rejectedBy.user": { $ne: userId }
+        })
+            .populate("fromUser", "name lastName avatarUrl inviteCode")
+            .lean(); // 🚀 performance boost
+
+        return res.status(200).json({
+            count: invites.length,
+            invites
+        });
+
+    } catch (err) {
+        console.error("❌ Get all pending invites error:", err);
+        return res.status(500).json({ message: "Failed to fetch pending invites" });
+    }
+};
+
+export const getAllPendingSentPrivateInvites = async (req, res) => {
+    try {
+        if (!req.user?.id) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const userId = req.user.id;
+        const now = new Date();
+
+        const invites = await Invite.find({
+            // ✅ SENT by this user
+            fromUser: userId,
+
+            // ✅ ONLY private invites
+            invitingTo: "private",
+
+            // ✅ not revoked
+            revoked: false,
+
+            // ✅ invite still valid
+            $or: [
+                { expiresAt: { $exists: false } },
+                { expiresAt: null },
+                { expiresAt: { $gt: now } }
+            ],
+
+            // ✅ no one accepted yet
+            acceptedBy: { $size: 0 },
+
+            // ✅ no one rejected yet
+            rejectedBy: { $size: 0 }
+        })
+            .populate("toUsers", "name lastName avatarUrl inviteCode")
+            .lean();
+
+        return res.status(200).json({
+            count: invites.length,
+            invites
+        });
+
+    } catch (err) {
+        console.error("❌ Get pending sent invites error:", err);
+        return res.status(500).json({ message: "Failed to fetch sent invites" });
     }
 };

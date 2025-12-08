@@ -13,6 +13,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import InvitesPopup from "./InvitesPopup";
+import { useSocketEvents } from "@/context/SocketEventsContext";
+import InviteBadge from "./InviteBadge";
 
 export default function IconSidebar({
     onToggleChats,
@@ -25,6 +27,7 @@ export default function IconSidebar({
     const [showRequests, setShowRequests] = useState(false);
     const router = useRouter();
     const { logout } = useAuth();
+    const { invites } = useSocketEvents();
 
     const menuItems = [
         {
@@ -100,17 +103,22 @@ export default function IconSidebar({
 
                 {showMenu && (
                     <div className="absolute bottom-14 bg-gray-800 text-white rounded-lg shadow-lg border w-40 py-2 animate-fade-in left-[90px] z-999 -translate-x-1/2">
-
                         <button
                             onClick={() => {
                                 setShowInvites(true);
-                                setShowRequests(false);
+                                setShowMenu(false);
                             }}
-                            className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2"
+                            className="w-full text-left px-4 py-2 hover:bg-gray-700 
+               flex items-center justify-between"
                         >
-                            <EnvelopeIcon className="w-5 h-5" />
-                            Requests
+                            <span className="flex items-center gap-2">
+                                <EnvelopeIcon className="w-5 h-5" />
+                                Requests
+                            </span>
+
+                            <InviteBadge />
                         </button>
+
                         <button
                             onClick={() => router.push("/profile")}
                             className="w-full text-left px-4 py-2 hover:bg-gray-700 flex items-center gap-2"

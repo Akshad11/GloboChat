@@ -1,6 +1,7 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { getDBUserByID, PrintOnlineUsers } from "./helperfunctions.js";
+import { createInviteData } from "../services/inviteService.js";
 
 const onlineUsers = new Map();
 // userId -> Set(socketIds)
@@ -51,7 +52,7 @@ export function initSocketServer(server) {
                             inviteCode: user.inviteCode,
                         };
 
-                        console.log(`👤 User cached for socket ${socket.id}:`, entry.user);
+                        // console.log(`👤 User cached for socket ${socket.id}:`, entry.user);
 
                     }
                 })
@@ -63,7 +64,7 @@ export function initSocketServer(server) {
                     );
                 });
 
-            console.log(`✅ Socket ${socket.id} registered for user ${userId}`);
+            // console.log(`✅ Socket ${socket.id} registered for user ${userId}`);
         } catch (err) {
             console.log("❌ Invalid token", err.message);
             socket.disconnect();
@@ -97,29 +98,71 @@ export function initSocketServer(server) {
             socket.emit("socket:user", getOnlineUser(socket.id));
         });
 
-        socket.on("inviteSent", (data) => {
-            const { fromUserId, inviteId, message } = data;
+        socket.on("inviteSent", async (data) => {
+            try {
+                const { fromUserId, inviteId, message, invitingTo } = data;
 
-            const toUser = getOnlineUserByInviteId(inviteId);
-            console.log(
-                `📨 Invite from ${fromUserId} to ${toUser.id} (inviteId: ${inviteId})`
-            );
-
-            const targetSockets = onlineUsers.get(toUserId?.toString());
-
-            if (!targetSockets || targetSockets.size === 0) {
-                console.log("⚠️ Target user is offline");
-                return;
-            }
-
-            for (const socketId of targetSockets) {
-                io.to(socketId).emit("inviteReceived", {
+                // 1️⃣ Create or resolve invite
+                const result = await createInviteData({
                     fromUserId,
                     inviteId,
                     message,
+                    invitingTo,
+                });
+
+                // 2️⃣ Handle pending states
+                if (result === "Pending") {
+                    socket.emit("invitePending", {
+                        message: "Invite is already pending",
+                    });
+                    return;
+                }
+
+                if (result === "PendingActionFromYou") {
+                    socket.emit("invitePending", {
+                        message: "You already have a pending invite from this user",
+                    });
+                    return;
+                }
+
+                // ✅ At this point: result = InviteID
+                const inviteDbId = result;
+                console.log("📝 Invite created:", inviteDbId);
+
+                // 3️⃣ Resolve target user from invite code (again, safe)
+                const targetUser = await User.findOne({ inviteCode: inviteId });
+                if (!targetUser) return;
+
+                const targetUserId = targetUser._id.toString();
+
+                // 4️⃣ Check if target user is online
+                const targetEntry = onlineUsers.get(targetUserId);
+
+                if (!targetEntry || targetEntry.sockets.size === 0) {
+                    console.log("📦 Target user offline → invite stored in DB");
+                    return;
+                }
+
+                // 5️⃣ Emit invite to all active sockets of target user
+                for (const socketId of targetEntry.sockets.keys()) {
+                    io.to(socketId).emit("inviteReceived", {
+                        inviteId: inviteDbId,
+                        fromUserId,
+                        message,
+                        invitingTo,
+                    });
+                }
+
+                console.log("📤 Invite sent to online user");
+
+            } catch (err) {
+                console.error("❌ Error handling inviteSent:", err.message);
+                socket.emit("inviteError", {
+                    message: err.message || "Failed to send invite",
                 });
             }
         });
+
 
         socket.on("disconnect", () => {
             console.log("❌ Socket disconnected:", socket.id);
@@ -161,9 +204,9 @@ export function getOnlineUser(socketId) {
 }
 
 export function getOnlineUserByInviteId(inviteId) {
-    for (const [userId, sockets] of onlineUsers.entries()) {
-        if (sockets.has(inviteId)) {
-            return userId;
+    for (const [userId, entry] of onlineUsers.entries()) {
+        if (entry?.user && entry.user.inviteCode === inviteId) {
+            return entry.user;
         }
     }
     return null;

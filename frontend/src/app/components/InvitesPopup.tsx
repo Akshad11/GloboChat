@@ -1,183 +1,207 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { PendingInvite } from "@/types";
+import api from "@/lib/axios";
 
 /* =======================
-   TYPES
+   ANIMATIONS
 ======================= */
 
-type ReceivedInvite = {
-    id: number;
-    type: "received";
-    from: string;
-    code: string;
+const popupVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    visible: { opacity: 1, scale: 1 },
 };
 
-type SentInvite = {
-    id: number;
-    type: "sent";
-    to: string;
-    code: string;
-    status: "Pending" | "Accepted" | "Rejected";
+const itemVariants = {
+    hidden: { opacity: 0, y: 4 },
+    visible: { opacity: 1, y: 0 },
 };
 
-type Invite = ReceivedInvite | SentInvite;
+const toastVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+};
 
-/* =======================
-   COMPONENT
-======================= */
-
-export default function InvitesPopup({
-    onClose,
-}: {
-    onClose: () => void;
-}) {
+export default function InvitesPopup({ onClose }: { onClose: () => void }) {
     const [tab, setTab] = useState<"received" | "sent">("received");
+    const [toast, setToast] =
+        useState<{ msg: string; type: "success" | "error" } | null>(null);
 
-    // ✅ TEMP MOCK DATA (replace with backend later)
-    const receivedInvites: ReceivedInvite[] = [
-        {
-            id: 1,
-            type: "received",
-            from: "Akshad",
-            code: "AX92KD",
-        },
-        {
-            id: 2,
-            type: "received",
-            from: "Rahul",
-            code: "RHL77K",
-        },
-    ];
+    const { invitesReceived, invitesSent } = useAuth();
 
-    const sentInvites: SentInvite[] = [
-        {
-            id: 3,
-            type: "sent",
-            to: "Ananya",
-            code: "AX92KD",
-            status: "Pending",
-        },
-        {
-            id: 4,
-            type: "sent",
-            to: "Vikram",
-            code: "AX92KD",
-            status: "Accepted",
-        },
-    ];
+    /* ✅ LOCAL OWNERSHIP (CRITICAL FIX) */
+    const [localReceived, setLocalReceived] = useState<PendingInvite[]>([]);
+    const [localSent, setLocalSent] = useState<PendingInvite[]>([]);
 
-    const invites: Invite[] =
-        tab === "received" ? receivedInvites : sentInvites;
+    /* sync once auth data arrives */
+    useEffect(() => {
+        if (invitesReceived) setLocalReceived(invitesReceived);
+    }, [invitesReceived]);
+
+    useEffect(() => {
+        if (invitesSent) setLocalSent(invitesSent);
+    }, [invitesSent]);
+
+    const activeInvites =
+        tab === "received" ? localReceived : localSent;
+
+    const showToast = (msg: string, type: "success" | "error" = "success") => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 2500);
+    };
+
+    /* =======================
+       API HANDLERS (FIXED)
+    ======================= */
+
+    const handleAcceptInvite = async (code: string, id: string) => {
+        try {
+            await api.post(`/invites/${code}/accept`);
+            setLocalReceived(prev => prev.filter(inv => inv._id !== id));
+            showToast("Invite accepted");
+        } catch {
+            showToast("Failed to accept invite", "error");
+        }
+    };
+
+    const handleRejectInvite = async (code: string, id: string) => {
+        try {
+            await api.post(`/invites/${code}/reject`);
+            setLocalReceived(prev => prev.filter(inv => inv._id !== id));
+            showToast("Invite rejected");
+        } catch {
+            showToast("Failed to reject invite", "error");
+        }
+    };
+
+    const handleCancelInvite = async (code: string, id: string) => {
+        try {
+            await api.post(`/invites/${code}/revoke`);
+            setLocalSent(prev => prev.filter(inv => inv._id !== id));
+            showToast("Request cancelled");
+        } catch {
+            showToast("Failed to cancel request", "error");
+        }
+    };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-999">
-            <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.2 }}
-                className="bg-gray-900 text-white w-full max-w-md rounded-2xl p-6 border border-gray-800 relative"
-            >
-                {/* CLOSE */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 p-2 hover:bg-gray-800 rounded-lg"
+        <div className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50">
+            <AnimatePresence>
+                <motion.div
+                    variants={popupVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    transition={{ duration: 0.25 }}
+                    className="bg-gray-900 text-white w-full max-w-md rounded-2xl border border-gray-800 shadow-2xl relative"
                 >
-                    <XMarkIcon className="w-6 h-6" />
-                </button>
-
-                {/* TITLE */}
-                <h2 className="text-xl font-semibold mb-4">Requests</h2>
-
-                {/* TABS */}
-                <div className="flex mb-4 bg-gray-800 rounded-lg overflow-hidden">
-                    <button
-                        onClick={() => setTab("received")}
-                        className={`flex-1 py-2 text-sm font-medium transition
-                            ${tab === "received"
-                                ? "bg-blue-600"
-                                : "hover:bg-gray-700"
-                            }
-                        `}
-                    >
-                        Received
-                    </button>
-                    <button
-                        onClick={() => setTab("sent")}
-                        className={`flex-1 py-2 text-sm font-medium transition
-                            ${tab === "sent"
-                                ? "bg-blue-600"
-                                : "hover:bg-gray-700"
-                            }
-                        `}
-                    >
-                        Sent
-                    </button>
-                </div>
-
-                {/* INVITES LIST */}
-                <div className="space-y-3 max-h-64 overflow-auto">
-                    {invites.length === 0 && (
-                        <p className="text-center text-gray-400 text-sm py-6">
-                            No {tab} invites
-                        </p>
-                    )}
-
-                    {invites.map((inv) => (
-                        <div
-                            key={inv.id}
-                            className="flex justify-between items-center bg-gray-800 p-3 rounded-lg"
+                    {/* HEADER */}
+                    <div className="px-6 pt-6 pb-4">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
                         >
-                            {/* LEFT */}
-                            <div>
-                                <p className="font-medium">
-                                    {inv.type === "received"
-                                        ? inv.from
-                                        : inv.to}
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    Code: {inv.code}
-                                </p>
-                            </div>
+                            <XMarkIcon className="w-6 h-6" />
+                        </button>
 
-                            {/* RIGHT */}
-                            {inv.type === "received" ? (
-                                <div className="flex gap-2">
-                                    <button
-                                        className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm"
-                                        onClick={() =>
-                                            console.log("Accept invite", inv.id)
-                                        }
-                                    >
-                                        Accept
-                                    </button>
-                                    <button
-                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
-                                        onClick={() =>
-                                            console.log("Reject invite", inv.id)
-                                        }
-                                    >
-                                        Reject
-                                    </button>
-                                </div>
-                            ) : (
-                                <span
-                                    className={`text-xs font-medium ${inv.status === "Pending"
-                                        ? "text-yellow-400"
-                                        : inv.status === "Accepted"
-                                            ? "text-green-400"
-                                            : "text-red-400"
-                                        }`}
+                        <h2 className="text-xl font-semibold">Requests</h2>
+
+                        {/* TABS */}
+                        <div className="flex mt-4 bg-gray-800 rounded-xl overflow-hidden">
+                            {["received", "sent"].map((t) => (
+                                <button
+                                    key={t}
+                                    onClick={() => setTab(t as any)}
+                                    className={`flex-1 py-2 text-sm
+                                    ${tab === t ? "bg-blue-600" : "hover:bg-gray-700"}`}
                                 >
-                                    {inv.status}
-                                </span>
-                            )}
+                                    {t === "received" ? "Received" : "Sent"}
+                                </button>
+                            ))}
                         </div>
-                    ))}
-                </div>
-            </motion.div>
+                    </div>
+
+                    {/* LIST */}
+                    <div className="px-4 pb-6 max-h-[320px] overflow-y-auto space-y-3">
+                        {activeInvites.length === 0 && (
+                            <p className="text-center text-gray-400 text-sm py-10">
+                                No {tab} invites
+                            </p>
+                        )}
+
+                        {activeInvites.map((inv) => {
+                            const name =
+                                tab === "sent"
+                                    ? `${inv.toUsers[0]?.name ?? "User"} ${inv.toUsers[0]?.lastName ?? ""}`
+                                    : `${inv.fromUser.name} ${inv.fromUser.lastName}`;
+
+                            return (
+                                <motion.div
+                                    key={inv._id} // ✅ always unique now
+                                    variants={itemVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    className="flex justify-between items-center bg-gray-800 p-4 rounded-xl"
+                                >
+                                    <div>
+                                        <p className="font-medium">{name}</p>
+                                        <p className="text-xs text-gray-400">
+                                            Code: {inv.code}
+                                        </p>
+                                    </div>
+
+                                    {tab === "received" ? (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleAcceptInvite(inv.code, inv._id)}
+                                                className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm"
+                                            >
+                                                Accept
+                                            </button>
+                                            <button
+                                                onClick={() => handleRejectInvite(inv.code, inv._id)}
+                                                className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs font-medium text-yellow-400">
+                                                Pending
+                                            </span>
+                                            <button
+                                                onClick={() => handleCancelInvite(inv.code, inv._id)}
+                                                className="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400"
+                                            >
+                                                <XMarkIcon className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+
+                {/* TOAST */}
+                {toast && (
+                    <motion.div
+                        variants={toastVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm
+                        ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
+                    >
+                        {toast.msg}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
