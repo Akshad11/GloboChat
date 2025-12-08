@@ -38,13 +38,11 @@ const inviteSchema = new Schema(
         targetId: {
             type: Schema.Types.ObjectId,
             refPath: "targetModel",
-            required: true,
         },
 
         targetModel: {
             type: String,
             enum: ["Conversation", "Group"],
-            required: true,
         },
 
         message: {
@@ -151,6 +149,21 @@ inviteSchema.methods.rejectInvite = async function (userId) {
     return { success: true, invite: this };
 };
 
+inviteSchema.methods.getStatusForUser = function (userId) {
+    if (!this.isValid()) return "invalid";
+
+    const uid = userId.toString();
+
+    if (this.acceptedBy.some(a => a.user.toString() === uid)) {
+        return "accepted";
+    }
+
+    if (this.rejectedBy.some(r => r.user.toString() === uid)) {
+        return "rejected";
+    }
+
+    return "pending";
+};
 
 inviteSchema.statics.createInvite = async function ({
     code,

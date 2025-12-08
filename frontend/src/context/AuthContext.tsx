@@ -5,9 +5,13 @@ import api, { setAccessToken } from "@/lib/axios";
 import { setCookie, getCookie, deleteCookie } from "cookies-next";
 import { useRouter } from "next/navigation";
 import { connectSocket, disconnectSocket, emitTest, registerSocketUser } from "@/lib/socket";
+import { Socket } from "socket.io-client";
+import { PendingInvite, PendingReceivedInvitesResponse, PendingSentInvitesResponse } from "@/types";
 
 type AuthContextType = {
     user: any | null;
+    invitesReceived: PendingInvite[];
+    invitesSent: PendingInvite[];
     token: string | null;
     loading: boolean;
     register: (data: {
@@ -32,6 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<any | null>(null);
     const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [invitesReceived, setInvitesReceived] = useState<PendingInvite[]>([]);
+    const [invitesSent, setInvitesSent] = useState<PendingInvite[]>([]);
     const router = useRouter();
     const initialized = useRef(false);
 
@@ -89,6 +95,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user) return;
         registerSocketUser(user);
+    }, [user]);
+
+    useEffect(() => {
+        async function loadInvites() {
+            try {
+                console.log("Loading");
+
+                const res = await api.get<PendingReceivedInvitesResponse>("/invites/pending");
+
+                console.log(res.data);
+
+                if (res.data.invites.length > 0) {
+                    console.log("Loaded pending invites:", res.data.invites);
+                    setInvitesReceived(res.data.invites); // ✅ correct
+                }
+
+                const res2 = await api.get<PendingSentInvitesResponse>("/invites/pendingsent");
+
+                console.log(res2.data);
+
+                if (res2.data.invites.length > 0) {
+                    console.log("Loaded pending invites:", res2.data.invites);
+                    setInvitesSent(res2.data.invites); // ✅ correct
+                }
+
+            } catch (err) {
+                console.error("Failed to load pending invites", err);
+            }
+        }
+
+        if (Socket && user) {
+            loadInvites();
+        }
     }, [user]);
 
     /* ===============================
@@ -162,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, token, loading, register, login, logout, googleSignIn, sendPrivateInvite }}
+            value={{ user, token, loading, register, login, logout, googleSignIn, sendPrivateInvite, invitesReceived, invitesSent }}
         >
             {children}
         </AuthContext.Provider>

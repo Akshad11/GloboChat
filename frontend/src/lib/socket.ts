@@ -1,5 +1,5 @@
-import { useAuth } from "@/context/AuthContext";
-import { col, em } from "framer-motion/client";
+
+import { s } from "framer-motion/client";
 import { io, Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
@@ -25,14 +25,22 @@ export function connectSocket(accessToken: string) {
 
     });
 
+    socket.on('user:refresh', () => {
+        console.log("🔄 Socket user refresh requested");
+
+    });
     socket.on("socket:user", (data) => {
         console.log("🏓 OnlineUser received:", data);
     });
 
-    socket.on("inviteReceived", (data) => {
-        console.log("📥 Invite received:", data);
-        console.log("From user:", data.fromUserId);
+    socket.on("invitePending", (data) => {
+        console.log("⚠️ Invite is already pending:", data);
     });
+
+    // socket.on("inviteReceived", (data) => {
+    //     console.log("📥 Invite received:", data);
+    //     console.log("From user:", data.fromUserId);
+    // });
 
     socket.on("disconnect", () => {
         console.log("❌ Socket disconnected");
@@ -77,6 +85,8 @@ export function sendPrivateInvite(
         fromUserId,
         inviteId,
         message,
+        invitingTo: "private",
+        targetModel: "Conversation",
     });
 }
 
