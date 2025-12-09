@@ -19,7 +19,7 @@ export default function InvitePopup({
     onClose: () => void;
     yourInviteCode: string;
 }) {
-    const { user } = useAuth();
+    const { user, loadInvites } = useAuth();
     const [friendCode, setFriendCode] = useState("");
     const [sent, setSent] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -40,6 +40,7 @@ export default function InvitePopup({
             setSent(false);
             setFriendCode("");
         }, 2600);
+        loadInvites();
     }
 
     function copyCode() {

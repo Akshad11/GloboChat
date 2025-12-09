@@ -54,5 +54,5 @@ export async function createInviteData(data) {
         message,
     });
 
-    return invite._id;
+    return invite;
 }

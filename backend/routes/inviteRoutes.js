@@ -17,9 +17,9 @@ const router = express.Router();
 router.post("/send", authMiddleware, sendInvite);
 router.get("/pending", authMiddleware, getAllPendingInvitesForUser);
 router.get("/pendingsent", authMiddleware, getAllPendingSentPrivateInvites);
-router.post("/:code/accept", authMiddleware, acceptInviteApi);
-router.post("/:code/reject", authMiddleware, rejectInvite);
-router.post("/:code/revoke", authMiddleware, revokeInvite);
+router.post("/accept", authMiddleware, acceptInviteApi);
+router.post("/reject", authMiddleware, rejectInvite);
+router.post("/revoke", authMiddleware, revokeInvite);
 router.get("/:code", authMiddleware, getInviteByCode);
 router.get("/", authMiddleware, getMyInvites);
 
