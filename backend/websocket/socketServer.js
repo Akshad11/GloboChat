@@ -126,30 +126,21 @@ export function initSocketServer(server) {
                 }
 
                 // ✅ At this point: result = InviteID
-                const inviteDbId = result;
+                const inviteDbId = result._id;
                 console.log("📝 Invite created:", inviteDbId);
 
-                // 3️⃣ Resolve target user from invite code (again, safe)
-                const targetUser = await User.findOne({ inviteCode: inviteId });
-                if (!targetUser) return;
+                const targetEntry = getOnlineUserByInviteId(inviteId);
 
-                const targetUserId = targetUser._id.toString();
-
-                // 4️⃣ Check if target user is online
-                const targetEntry = onlineUsers.get(targetUserId);
-
-                if (!targetEntry || targetEntry.sockets.size === 0) {
+                if (!targetEntry) {
                     console.log("📦 Target user offline → invite stored in DB");
                     return;
                 }
 
+                console.log(targetEntry);
                 // 5️⃣ Emit invite to all active sockets of target user
-                for (const socketId of targetEntry.sockets.keys()) {
+                for (const socketId of targetEntry) {
                     io.to(socketId).emit("inviteReceived", {
-                        inviteId: inviteDbId,
-                        fromUserId,
-                        message,
-                        invitingTo,
+                        invite: result
                     });
                 }
 
@@ -204,9 +195,9 @@ export function getOnlineUser(socketId) {
 }
 
 export function getOnlineUserByInviteId(inviteId) {
-    for (const [userId, entry] of onlineUsers.entries()) {
-        if (entry?.user && entry.user.inviteCode === inviteId) {
-            return entry.user;
+    for (const [_, entry] of onlineUsers.entries()) {
+        if (entry?.user?.inviteCode === inviteId) {
+            return entry;
         }
     }
     return null;

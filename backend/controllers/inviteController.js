@@ -72,16 +72,19 @@ export const sendInvite = async (req, res) => {
 */
 export const acceptInviteApi = async (req, res) => {
     try {
-        const { code } = req.params;
-        const userId = req.user._id;
+        const { code, id } = req.body;
+        const userId = req.user.id;
 
-        const invite = await Invite.findOne({ code });
+        const invite = await Invite.findById(id);
         if (!invite) return res.status(404).json({ message: "Invite not found" });
 
         const { success, reason } = await invite.acceptInvite(userId);
 
         if (!success) {
             return res.status(400).json({ message: `Cannot accept invite: ${reason}` });
+        }
+        if (invite.invitingTo === "private") {
+            invite.revoke();
         }
 
         return res.status(200).json({
@@ -103,10 +106,10 @@ export const acceptInviteApi = async (req, res) => {
 */
 export const rejectInvite = async (req, res) => {
     try {
-        const { code } = req.params;
-        const userId = req.user._id;
+        const { code, id } = req.body;
+        const userId = req.user.id;
 
-        const invite = await Invite.findOne({ code });
+        const invite = await Invite.findById(id);
         if (!invite) return res.status(404).json({ message: "Invite not found" });
 
         const { success, reason } = await invite.rejectInvite(userId);
@@ -114,7 +117,9 @@ export const rejectInvite = async (req, res) => {
         if (!success) {
             return res.status(400).json({ message: `Cannot reject invite: ${reason}` });
         }
-
+        if (invite.invitingTo === "private") {
+            invite.revoke();
+        }
         return res.status(200).json({
             message: "Invite rejected",
             invite
@@ -134,10 +139,11 @@ export const rejectInvite = async (req, res) => {
 */
 export const revokeInvite = async (req, res) => {
     try {
-        const { code } = req.params;
-        const userId = req.user._id;
+        const { code, id } = req.body;
 
-        const invite = await Invite.findOne({ code });
+        const userId = req.user.id;
+
+        const invite = await Invite.findById(id);
         if (!invite) return res.status(404).json({ message: "Invite not found" });
 
         if (invite.fromUser.toString() !== userId.toString()) {
@@ -257,7 +263,7 @@ export const getAllPendingInvitesForUser = async (req, res) => {
 
         const invites = await Invite.find({
             toUsers: userId,
-
+            revoked: false,
             // invite valid
             $or: [
                 { expiresAt: { $exists: false } },
