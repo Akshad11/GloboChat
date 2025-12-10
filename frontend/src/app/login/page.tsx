@@ -6,8 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
     const { login, googleSignIn } = useAuth();
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] = useState("john@example.com");
+    const [password, setPassword] = useState("password123");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 

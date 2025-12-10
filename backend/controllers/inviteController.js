@@ -2,6 +2,7 @@
 
 import Invite from "../models/InviteSchema.js";
 import User from "../models/User.js";
+import { createDirectConversation } from "../services/conversationService.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -85,6 +86,10 @@ export const acceptInviteApi = async (req, res) => {
         }
         if (invite.invitingTo === "private") {
             invite.revoke();
+            createDirectConversation(
+                invite.fromUser,
+                invite.toUsers[0]
+            );
         }
 
         return res.status(200).json({
