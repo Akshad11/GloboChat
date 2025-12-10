@@ -36,7 +36,6 @@ export function SocketEventProvider({ children }: { children: React.ReactNode })
         let interval: NodeJS.Timeout | null = null;
 
         const handler = (invite: PendingInvite) => {
-            console.log("📥 Invite received:", invite);
             notificationSound?.play().catch(() => {
                 console.log("🔇 Autoplay blocked until user interacts");
             });

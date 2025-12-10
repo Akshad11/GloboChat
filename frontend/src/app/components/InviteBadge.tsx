@@ -8,14 +8,11 @@ export default function InviteBadge() {
 
     useEffect(() => {
         if (invites.length > 0) {
-            console.log(invites);
             loadInvites();
             clearInvites();
         }
     }, [invites.length]);
 
-
-    // ✅ decide count based on priority
     const count =
         invites.length > 0
             ? invites.length

@@ -2,13 +2,11 @@ import Conversation from "../models/Conversation.js";
 import Member from "../models/Member.js";
 
 export const createDirectConversation = async (user1, user2) => {
-    // Check if already exists
     const existing = await Member.find({
         userId: { $in: [user1, user2] }
     }).lean();
 
-    // In production: add a better "direct convo exists" detector
-
+    console.log(user1, user2);
     const conversation = await Conversation.create({
         type: "direct",
         createdBy: user1,

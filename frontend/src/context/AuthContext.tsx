@@ -28,6 +28,7 @@ type AuthContextType = {
         userData?: { username: string; firstName: string; lastName: string }
     ) => Promise<void>;
     loadInvites: () => Promise<void>;
+    removeInviteByIdFromReceivedAndSent: (type: "RECEIVED" | "SENT", id: String) => void;
     sendPrivateInvite: (touserInviteCode: string, message?: string) => Promise<void>;
 };
 
@@ -128,6 +129,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     }
 
+    function removeInviteByIdFromReceivedAndSent(type: 'RECEIVED' | 'SENT', id: String) {
+        if (type === "RECEIVED") {
+            setInvitesReceived(prev =>
+                prev.filter(inv => inv._id !== id)
+            );
+        } else {
+            setInvitesSent(prev =>
+                prev.filter(inv => inv._id !== id)
+            );
+        }
+    }
+
     async function register(data: {
         username: string;
         email: string;
@@ -196,7 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, token, loading, register, login, logout, googleSignIn, sendPrivateInvite, invitesReceived, invitesSent, loadInvites }}
+            value={{ user, token, loading, register, login, logout, googleSignIn, sendPrivateInvite, invitesReceived, invitesSent, loadInvites, removeInviteByIdFromReceivedAndSent }}
         >
             {children}
         </AuthContext.Provider>

@@ -102,6 +102,7 @@ export function initSocketServer(server) {
             try {
                 const { fromUserId, inviteId, message, invitingTo } = data;
 
+
                 // 1️⃣ Create or resolve invite
                 const result = await createInviteData({
                     fromUserId,
@@ -127,7 +128,6 @@ export function initSocketServer(server) {
 
                 // ✅ At this point: result = InviteID
                 const inviteDbId = result._id;
-                console.log("📝 Invite created:", inviteDbId);
 
                 const targetEntry = getOnlineUserByInviteId(inviteId);
 
@@ -136,8 +136,6 @@ export function initSocketServer(server) {
                     return;
                 }
 
-                console.log(targetEntry);
-                // 5️⃣ Emit invite to all active sockets of target user
                 for (const socketId of targetEntry) {
                     io.to(socketId).emit("inviteReceived", {
                         invite: result

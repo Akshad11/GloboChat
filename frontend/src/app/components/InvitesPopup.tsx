@@ -1,12 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { PendingInvite } from "@/types";
-import api from "@/lib/axios";
-import { acceptRequest, rejectRequest, revokeRequest } from "@/lib/HelperFunctions";
+import {
+    acceptRequest,
+    rejectRequest,
+    revokeRequest,
+} from "@/lib/HelperFunctions";
 import { useSocketEvents } from "@/context/SocketEventsContext";
 
 /* =======================
@@ -33,14 +36,20 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
     const [toast, setToast] =
         useState<{ msg: string; type: "success" | "error" } | null>(null);
 
-    const { invitesReceived, invitesSent } = useAuth();
+    const { invitesReceived, invitesSent, removeInviteByIdFromReceivedAndSent } = useAuth();
     const { removeInviteById } = useSocketEvents();
 
-    /* ✅ LOCAL OWNERSHIP (CRITICAL FIX) */
+    /* =======================
+       LOCAL UI STATE
+    ======================= */
+
     const [localReceived, setLocalReceived] = useState<PendingInvite[]>([]);
     const [localSent, setLocalSent] = useState<PendingInvite[]>([]);
 
-    /* sync once auth data arrives */
+    /* =======================
+       SYNC FROM CONTEXT (SAFE)
+    ======================= */
+
     useEffect(() => {
         if (invitesReceived) setLocalReceived(invitesReceived);
     }, [invitesReceived]);
@@ -49,22 +58,30 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
         if (invitesSent) setLocalSent(invitesSent);
     }, [invitesSent]);
 
+
     const activeInvites =
         tab === "received" ? localReceived : localSent;
 
-    const showToast = (msg: string, type: "success" | "error" = "success") => {
+    /* =======================
+       TOAST
+    ======================= */
+
+    const showToast = (
+        msg: string,
+        type: "success" | "error" = "success"
+    ) => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 2500);
     };
 
     /* =======================
-       API HANDLERS (FIXED)
+       HANDLERS
     ======================= */
 
     const handleAcceptInvite = async (code: string, id: string) => {
         try {
             await acceptRequest(code, id);
-            setLocalReceived(prev => prev.filter(inv => inv._id !== id));
+            removeInviteByIdFromReceivedAndSent('RECEIVED', id);
             removeInviteById(id);
             showToast("Invite accepted");
         } catch {
@@ -75,7 +92,7 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
     const handleRejectInvite = async (code: string, id: string) => {
         try {
             await rejectRequest(code, id);
-            setLocalReceived(prev => prev.filter(inv => inv._id !== id));
+            removeInviteByIdFromReceivedAndSent('RECEIVED', id);
             removeInviteById(id);
             showToast("Invite rejected");
         } catch {
@@ -86,12 +103,18 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
     const handleCancelInvite = async (code: string, id: string) => {
         try {
             await revokeRequest(code, id);
-            setLocalSent(prev => prev.filter(inv => inv._id !== id));
+            setLocalSent(prev =>
+                prev.filter(inv => inv._id !== id)
+            );
             showToast("Request cancelled");
         } catch {
             showToast("Failed to cancel request", "error");
         }
     };
+
+    /* =======================
+       RENDER
+    ======================= */
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur flex items-center justify-center z-50">
@@ -121,7 +144,7 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
                                 key={t}
                                 onClick={() => setTab(t as any)}
                                 className={`flex-1 py-2 text-sm
-                                    ${tab === t ? "bg-blue-600" : "hover:bg-gray-700"}`}
+                                ${tab === t ? "bg-blue-600" : "hover:bg-gray-700"}`}
                             >
                                 {t === "received" ? "Received" : "Sent"}
                             </button>
@@ -130,14 +153,14 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
                 </div>
 
                 {/* LIST */}
-                <div className="px-4 pb-6 max-h-[320px] overflow-y-auto space-y-3">
+                <div className="px-4 pb-6 max-h-80 overflow-y-auto space-y-3">
                     {activeInvites.length === 0 && (
                         <p className="text-center text-gray-400 text-sm py-10">
                             No {tab} invites
                         </p>
                     )}
 
-                    {activeInvites.map((inv) => {
+                    {activeInvites.map(inv => {
                         const name =
                             tab === "sent"
                                 ? `${inv.toUsers[0]?.name ?? "User"} ${inv.toUsers[0]?.lastName ?? ""}`
@@ -161,13 +184,17 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
                                 {tab === "received" ? (
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => handleAcceptInvite(inv.code, inv._id)}
+                                            onClick={() =>
+                                                handleAcceptInvite(inv.code, inv._id)
+                                            }
                                             className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm"
                                         >
                                             Accept
                                         </button>
                                         <button
-                                            onClick={() => handleRejectInvite(inv.code, inv._id)}
+                                            onClick={() =>
+                                                handleRejectInvite(inv.code, inv._id)
+                                            }
                                             className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm"
                                         >
                                             Reject
@@ -179,7 +206,9 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
                                             Pending
                                         </span>
                                         <button
-                                            onClick={() => handleCancelInvite(inv.code, inv._id)}
+                                            onClick={() =>
+                                                handleCancelInvite(inv.code, inv._id)
+                                            }
                                             className="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-red-400"
                                         >
                                             <XMarkIcon className="w-4 h-4" />
@@ -200,7 +229,7 @@ export default function InvitesPopup({ onClose }: { onClose: () => void }) {
                     animate="visible"
                     exit="hidden"
                     className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm
-                        ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
+                    ${toast.type === "success" ? "bg-green-600" : "bg-red-600"}`}
                 >
                     {toast.msg}
                 </motion.div>
